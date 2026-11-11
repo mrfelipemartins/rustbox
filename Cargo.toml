@@ -17,7 +17,7 @@ bytes = "1"
 chrono = { version = "0.4", features = ["serde"] }
 futures-util = "0.3"
 dotenvy = "0.15"
-jsonwebtoken = "9"
+jsonwebtoken = "11"
 oauth2 = { version = "5", default-features = false }
 rustls-pemfile = "2"
 serde_yaml = "0.9"
