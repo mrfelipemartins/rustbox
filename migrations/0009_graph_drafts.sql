@@ -1,0 +1,9 @@
+CREATE TABLE graph_send_state (
+    send_id CHAR(36) CHARACTER SET ascii PRIMARY KEY,
+    phase VARCHAR(24) NOT NULL DEFAULT 'preparing',
+    draft_id VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NULL,
+    progress LONGBLOB NOT NULL,
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 1,
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (send_id) REFERENCES sends(id) ON DELETE CASCADE
+);

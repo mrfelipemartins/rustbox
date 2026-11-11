@@ -1,0 +1,18 @@
+# Rust build output (keep Cargo.lock for reproducible application builds)
+/target/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+/config.yaml
+/secrets/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Legacy local test output
+/soak-results/

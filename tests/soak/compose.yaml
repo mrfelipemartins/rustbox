@@ -1,0 +1,77 @@
+x-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  mysql:
+    logging: *bounded-logging
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: soak-root-only
+      MYSQL_DATABASE: rustbox
+      MYSQL_USER: rustbox
+      MYSQL_PASSWORD: soak-only
+    command: ["--max-allowed-packet=67108864"]
+    volumes:
+      - database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-psoak-root-only"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  dovecot:
+    logging: *bounded-logging
+    image: dovecot/dovecot:2.3-latest
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["mkdir -p /srv/vmail && chown 1000:1000 /srv/vmail && exec dovecot -F -c /etc/dovecot/soak.conf"]
+    volumes:
+      - ./dovecot.conf:/etc/dovecot/soak.conf:ro
+      - ./certs:/certs:ro
+      - mail:/srv/vmail
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  rustbox:
+    logging: *bounded-logging
+    build: ../..
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://rustbox:soak-only@mysql/rustbox
+      SOAK_API_KEY: ${SOAK_API_KEY:?run setup.sh first}
+      ENCRYPTION_KEY: ${SOAK_ENCRYPTION_KEY:?run setup.sh first}
+    volumes:
+      - ./certs:/certs:ro
+      - ./config.yaml:/etc/rustbox/config.yaml:ro
+    command: ["--config", "/etc/rustbox/config.yaml"]
+    ports:
+      - "127.0.0.1:18080:8080"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  runner:
+    logging: *bounded-logging
+    image: python:3.13-slim
+    depends_on:
+      - rustbox
+      - dovecot
+    working_dir: /work
+    command: ["python", "scripts/soak.py"]
+    environment:
+      SOAK_API_KEY: ${SOAK_API_KEY}
+      SOAK_WEBHOOK_SECRET: ${SOAK_WEBHOOK_SECRET}
+      SOAK_ACCOUNTS: ${SOAK_ACCOUNTS:-1000}
+      SOAK_SECONDS: ${SOAK_SECONDS:-86400}
+      SOAK_RATE: ${SOAK_RATE:-10}
+    volumes:
+      - ../../scripts:/work/scripts:ro
+      - ./certs:/certs:ro
+      - ./results:/results
+volumes:
+  database:
+  mail:

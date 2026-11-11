@@ -1,0 +1,34 @@
+services:
+  mysql:
+    mem_limit: 4g
+  dovecot:
+    image: python:3.13-slim
+    entrypoint: []
+    command: ["python", "/work/scripts/imap_simulator.py"]
+    mem_limit: 10g
+    pids_limit: 64
+    volumes:
+      - ../../scripts:/work/scripts:ro
+    ulimits:
+      nofile:
+        soft: 524288
+        hard: 524288
+  rustbox:
+    mem_limit: 12g
+    ulimits:
+      nofile:
+        soft: 524288
+        hard: 524288
+  runner:
+    mem_limit: 1g
+    command: ["python", "scripts/capacity.py"]
+    environment:
+      CAPACITY_KIND: tls_simulator_capacity_ramp
+      CAPACITY_STAGES: ${CAPACITY_STAGES:-1000,4000,16000,32000,64000,96000,128000,192000,220000}
+      CAPACITY_STAGE_SECONDS: ${CAPACITY_STAGE_SECONDS:-60}
+      CAPACITY_MIN_AVAILABLE_GIB: "6"
+      CAPACITY_STOP_FILE: /results/capacity.stop
+      SOAK_IMAP_PORTS: 993,1993,2993,3993,4993,5993,6993,7993
+      SOAK_RATE: "10"
+    volumes:
+      - ./simulator-results:/results

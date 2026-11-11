@@ -1,0 +1,21 @@
+[Unit]
+Description=Rustbox mail account service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rustbox
+Group=rustbox
+ExecStart=/usr/local/bin/rustbox --config /etc/rustbox/config.yaml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=120
+LimitNOFILE=16384
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

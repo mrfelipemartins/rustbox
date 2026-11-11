@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: test-only-password
+          MYSQL_DATABASE: rustbox_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -ptest-only-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+      - name: Formatting
+        run: cargo +stable fmt --check
+      - name: Lints
+        run: cargo +stable clippy --locked --all-targets -- -D warnings
+      - name: Rust tests
+        run: cargo +stable test --locked --all-targets
+      - name: Database integration tests
+        env:
+          TEST_DATABASE_URL: mysql://root:test-only-password@127.0.0.1:3306/rustbox_test
+        run: cargo +stable test --locked --all-targets -- --ignored --test-threads=1
+      - name: Python fixture tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'

@@ -1,0 +1,74 @@
+server:
+  listen: "0.0.0.0:8080"
+  command_timeout_secs: 60
+  log_filter: "rustbox=info"
+database:
+  url: "${DATABASE_URL}"
+security:
+  encryption_key: "${ENCRYPTION_KEY}"
+  allow_private_networks: false
+api:
+  keys:
+    main-app: "${MAIN_APP_API_KEY}"
+mail:
+  # Total MIME bytes; Graph attachments use upload sessions above 3 MB.
+  # Raise MySQL max_allowed_packet before increasing this ceiling.
+  max_message_bytes: 26214400
+workers:
+  imap_concurrency: 64
+  smtp_concurrency: 8
+  webhook_concurrency: 32
+webhooks:
+  timeout_secs: 10
+  retry_window_hours: 24
+  retention_days: 7
+oauth:
+  concurrency: 8
+  providers: {}
+    # Replace providers: {} above with providers: and enable registrations below.
+    # google-main:
+    #   provider: google
+    #   mode: delegated
+    #   client_id: "${GOOGLE_CLIENT_ID}"
+    #   client_secret: "${GOOGLE_CLIENT_SECRET}"
+    #   redirect_uris:
+    #     - "https://app.example.com/mail/oauth/google/callback"
+    # microsoft-main:
+    #   provider: microsoft
+    #   mode: delegated
+    #   tenant: common
+    #   client_id: "${MICROSOFT_CLIENT_ID}"
+    #   client_secret: "${MICROSOFT_CLIENT_SECRET}"
+    #   redirect_uris:
+    #     - "https://app.example.com/mail/oauth/microsoft/callback"
+    # google-workspace:
+    #   provider: google
+    #   mode: domain_wide_delegation
+    #   service_account_file: "${GOOGLE_SERVICE_ACCOUNT_FILE}"
+    # microsoft-organization:
+    #   provider: microsoft
+    #   mode: application
+    #   tenant: "${MICROSOFT_TENANT_ID}"
+    #   client_id: "${MICROSOFT_APPLICATION_CLIENT_ID}"
+    #   client_secret: "${MICROSOFT_APPLICATION_CLIENT_SECRET}"
+    #   # Alternatively replace client_secret with both certificate fields:
+    #   # certificate_file: secrets/microsoft-certificate.pem
+    #   # private_key_file: secrets/microsoft-private-key.pem
+
+native:
+  public_url: "${NATIVE_PUBLIC_URL}"
+  poll_secs: 30
+  safety_poll_secs: 300
+  reconcile_secs: 600
+  concurrency: 16
+  # gmail_topic: "projects/my-project/topics/rustbox-mail"
+  # gmail_topics:
+  #   google-main: "projects/my-project/topics/rustbox-mail"
+  # pubsub_audience: "https://rustbox.example.com/notifications/google"
+  # pubsub_email: "push@my-project.iam.gserviceaccount.com"
+
+cache:
+  retention_days: 7
+  max_message_bytes: 26214400
+  capacity_bytes: 10737418240
+  concurrency: 4

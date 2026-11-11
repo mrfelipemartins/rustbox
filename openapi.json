@@ -1,0 +1,2441 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Rustbox",
+    "version": "0.1.0",
+    "description": "Internal IMAP/SMTP service. Authenticated apps share access to all accounts. Webhooks sign timestamp + dot + exact JSON bytes using HMAC-SHA256 in X-Rustbox-Signature: t=<unix>,v1=<hex>."
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/accounts": {
+      "get": {
+        "summary": "List accounts without secrets",
+        "operationId": "get__v1_accounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AccountStatus"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create account and begin connecting",
+        "operationId": "post__v1_accounts",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}": {
+      "get": {
+        "summary": "Get account lifecycle and connection status",
+        "operationId": "get__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace account configuration and reconnect",
+        "operationId": "put__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Disconnect and delete local account data",
+        "operationId": "delete__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/pause": {
+      "post": {
+        "summary": "Pause account monitoring",
+        "operationId": "post__v1_accounts_id_pause",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/resume": {
+      "post": {
+        "summary": "Resume account monitoring",
+        "operationId": "post__v1_accounts_id_resume",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/folders": {
+      "get": {
+        "summary": "List provider folders",
+        "operationId": "get__v1_accounts_id_folders",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/messages": {
+      "get": {
+        "summary": "List indexed messages with stable Rustbox IDs and location records",
+        "operationId": "get__v1_accounts_id_messages",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mailbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/flags": {
+      "patch": {
+        "summary": "Synchronously flags message",
+        "operationId": "patch__v1_accounts_id_flags",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagsInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/move": {
+      "post": {
+        "summary": "Synchronously move message",
+        "operationId": "post__v1_accounts_id_move",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/trash": {
+      "post": {
+        "summary": "Synchronously trash message",
+        "operationId": "post__v1_accounts_id_trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRef"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/send": {
+      "post": {
+        "summary": "Queue structured email; no automatic retry on unknown outcome",
+        "operationId": "post__v1_accounts_id_send",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Total MIME or Graph draft/attachment exceeds an exposed limit before queueing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SendComponentLimitExceeded"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sends/{id}": {
+      "get": {
+        "summary": "Get send acceptance and Sent-append status",
+        "operationId": "get__v1_sends_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission status and separate Sent-copy recovery status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "summary": "Recover events in commit order; expired cursors return 410",
+        "operationId": "get__v1_events",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Event"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "summary": "live",
+        "operationId": "get__health_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "ready",
+        "operationId": "get__health_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "metrics",
+        "operationId": "get__metrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/clients": {
+      "get": {
+        "summary": "List configured OAuth registrations",
+        "operationId": "get__v1_oauth_clients",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClients"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/authorizations": {
+      "post": {
+        "summary": "Start app-owned OAuth consent",
+        "operationId": "post__v1_oauth_authorizations",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorizationCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthAuthorizationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/authorizations/{id}": {
+      "get": {
+        "summary": "Read an authorization owned by this API application",
+        "operationId": "get__v1_oauth_authorizations_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorization"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Cancel unfinished authorization",
+        "operationId": "delete__v1_oauth_authorizations_id",
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/oauth/authorizations/{id}/complete": {
+      "post": {
+        "summary": "Exchange callback code or record denial",
+        "operationId": "post__v1_oauth_authorizations_id_complete",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorization"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCompletionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/credentials": {
+      "post": {
+        "summary": "Validate and import credentials",
+        "operationId": "post__v1_oauth_credentials",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCredentialInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/credentials/{id}": {
+      "get": {
+        "summary": "Read credential health without secrets",
+        "operationId": "get__v1_oauth_credentials_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "put": {
+        "summary": "Replace delegated refresh credentials",
+        "operationId": "put__v1_oauth_credentials_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCredentialReplacement"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an unreferenced credential locally",
+        "operationId": "delete__v1_oauth_credentials_id",
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/accounts/{id}/messages/{message_id}/content": {
+      "get": {
+        "summary": "Get parsed MIME or raw RFC822 content without marking read",
+        "operationId": "get__v1_accounts_id_content",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "raw",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Content unavailable from provider and expired or absent from cache"
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/messages/{message_id}/attachments/{index}": {
+      "get": {
+        "summary": "Download attachment by zero-based parsed MIME index",
+        "operationId": "get__v1_accounts_id_attachments_index",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/messages/{message_id}": {
+      "get": {
+        "summary": "Read message metadata, content state and locations",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/labels": {
+      "post": {
+        "summary": "Modify Gmail label memberships",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelsInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/sync": {
+      "post": {
+        "summary": "Schedule or join account synchronization",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/syncs/{id}": {
+      "get": {
+        "summary": "Read synchronization-run status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sends/{id}/reconcile": {
+      "post": {
+        "summary": "Inspect Sent evidence without resubmission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sends/{id}/resolve": {
+      "post": {
+        "summary": "Record an explicit send resolution without resubmission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendResolution"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/microsoft": {
+      "post": {
+        "summary": "Authenticated provider notifications; challenge or durable synchronization wake-up",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/microsoft/lifecycle": {
+      "post": {
+        "summary": "Authenticated provider notifications; challenge or durable synchronization wake-up",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/google": {
+      "post": {
+        "summary": "Authenticated provider notifications; challenge or durable synchronization wake-up",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/sends/{id}/append/reconcile": {
+      "post": {
+        "summary": "Reconcile an accepted email\u2019s optional Sent copy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Copy recovery status; delivery remains accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Copy state, evidence, configuration, or retention deadline blocks recovery"
+          }
+        }
+      }
+    },
+    "/v1/sends/{id}/append/retry": {
+      "post": {
+        "summary": "Retry the optional Sent copy without resending the email",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Copy recovery status; delivery remains accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Copy state, evidence, configuration, or retention deadline blocks recovery"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendRetryRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "MailServer": {
+        "type": "object",
+        "required": [
+          "host",
+          "port",
+          "username"
+        ],
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "tls_mode": {
+            "type": "string",
+            "enum": [
+              "implicit",
+              "starttls"
+            ],
+            "default": "implicit"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/OAuthMailAuth"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "password"
+            ],
+            "not": {
+              "required": [
+                "auth"
+              ]
+            }
+          },
+          {
+            "required": [
+              "auth"
+            ],
+            "not": {
+              "required": [
+                "password"
+              ]
+            }
+          }
+        ]
+      },
+      "AccountInput": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "imap": {
+            "$ref": "#/components/schemas/MailServer"
+          },
+          "smtp": {
+            "$ref": "#/components/schemas/MailServer"
+          },
+          "watched_folders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "backfill_days": {
+            "type": "integer",
+            "default": 30
+          },
+          "trash_folder": {
+            "type": "string"
+          },
+          "sent_folder": {
+            "type": "string"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "webhook_secret": {
+            "type": "string",
+            "minLength": 32,
+            "writeOnly": true
+          },
+          "backend": {
+            "type": "string",
+            "enum": [
+              "imap",
+              "microsoft",
+              "google"
+            ],
+            "default": "imap"
+          },
+          "credential_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_mailbox": {
+            "type": "string"
+          },
+          "authorizing_identity": {
+            "type": "string"
+          },
+          "shared": {
+            "type": "boolean",
+            "default": false
+          },
+          "sync_from": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inclusive persisted received/internal date cutoff; omitted default resolved once at provisioning"
+          }
+        },
+        "description": "Native accounts require backend, credential_id and target_mailbox. IMAP accounts require imap/smtp. watched_folders contains provider folder/label identifiers."
+      },
+      "MessageRef": {
+        "type": "object",
+        "required": [
+          "message_id"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SendRequest": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "subject"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "html": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "filename",
+                "content_type",
+                "data_base64"
+              ],
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "content_type": {
+                  "type": "string"
+                },
+                "data_base64": {
+                  "type": "string",
+                  "format": "byte"
+                },
+                "disposition": {
+                  "type": "string",
+                  "enum": [
+                    "attachment",
+                    "inline"
+                  ],
+                  "default": "attachment"
+                },
+                "content_id": {
+                  "type": "string",
+                  "description": "Content-ID without angle brackets; required for inline parts"
+                }
+              }
+            }
+          },
+          "in_reply_to": {
+            "type": "string"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reply_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reply_to_message_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "retry_of_send_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "id",
+          "schema_version",
+          "account_id",
+          "type",
+          "observed_at",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "schema_version": {
+            "type": "integer"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "backend": {
+                "type": "string"
+              },
+              "maximum_mime_bytes": {
+                "type": "integer"
+              },
+              "actual_mime_bytes": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "FlagsInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MessageRef"
+          },
+          {
+            "type": "object",
+            "required": [
+              "flags"
+            ],
+            "properties": {
+              "flags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "MoveInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MessageRef"
+          },
+          {
+            "type": "object",
+            "required": [
+              "destination"
+            ],
+            "properties": {
+              "destination": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "description": "Gmail source label to remove; other labels remain unchanged"
+              }
+            }
+          }
+        ]
+      },
+      "OAuthMailAuth": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "credential_id"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "oauth2"
+            ]
+          },
+          "credential_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "OAuthAuthorizationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_id",
+          "redirect_uri"
+        ],
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "Configured registration ID"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "credential_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional existing credential to reauthorize"
+          },
+          "login_hint": {
+            "type": "string"
+          }
+        }
+      },
+      "OAuthCompletionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state"
+        ],
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "code"
+            ],
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          },
+          {
+            "required": [
+              "error"
+            ],
+            "not": {
+              "required": [
+                "code"
+              ]
+            }
+          }
+        ]
+      },
+      "OAuthCredentialInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_id"
+        ],
+        "properties": {
+          "client_id": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "Required only for delegated registrations"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Required only for Google Workspace delegation"
+          }
+        }
+      },
+      "OAuthCredentialReplacement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "refresh_token"
+        ],
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "writeOnly": true
+          }
+        }
+      },
+      "OAuthCredential": {
+        "type": "object",
+        "required": [
+          "id",
+          "client_id",
+          "revision",
+          "health"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_id": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "health": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "reauthorization_required",
+              "failed"
+            ]
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "required_action": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "reauthorize",
+              "check_provider_configuration",
+              null
+            ]
+          },
+          "credential_type": {
+            "type": "string",
+            "enum": [
+              "delegated",
+              "domain_wide_delegation",
+              "application"
+            ]
+          }
+        }
+      },
+      "OAuthAuthorization": {
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "exchanging",
+              "completed",
+              "denied",
+              "failed",
+              "expired",
+              "cancelled",
+              "uncertain"
+            ]
+          },
+          "credential_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OAuthAuthorizationCreated": {
+        "type": "object",
+        "required": [
+          "id",
+          "authorization_url",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorization_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OAuthClients": {
+        "type": "object",
+        "properties": {
+          "clients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string",
+                  "enum": [
+                    "google",
+                    "microsoft"
+                  ]
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "delegated",
+                    "domain_wide_delegation",
+                    "application"
+                  ]
+                },
+                "redirect_uris": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LabelsInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MessageRef"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "add": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "remove": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SendResolution": {
+        "type": "object",
+        "required": [
+          "decision",
+          "reason",
+          "evidence"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "unresolved"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "object"
+          }
+        }
+      },
+      "Reconciliation": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "ambiguous",
+              "not_found",
+              "unavailable"
+            ]
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "safe_to_retry": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          }
+        }
+      },
+      "SendingLimits": {
+        "type": "object",
+        "description": "Limits for the implemented Rustbox send path. Lower tenant, mailbox, server, or recipient limits may apply. MIME size includes all headers and transfer-encoded attachments before outer API encoding.",
+        "required": [
+          "backend",
+          "limit_scope",
+          "configured_max_mime_bytes",
+          "supported_path_max_mime_bytes",
+          "max_mime_bytes",
+          "max_encoded_request_bytes",
+          "request_encoding",
+          "max_attachment_bytes",
+          "max_thread_id_bytes",
+          "large_attachment_upload_supported",
+          "provider_policy_may_be_lower",
+          "encoded_request_limit_scope",
+          "max_draft_mime_bytes",
+          "max_upload_chunk_bytes"
+        ],
+        "properties": {
+          "backend": {
+            "type": "string",
+            "enum": [
+              "imap",
+              "microsoft",
+              "google"
+            ]
+          },
+          "limit_scope": {
+            "type": "string",
+            "enum": [
+              "rustbox_supported_send_path"
+            ]
+          },
+          "configured_max_mime_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "supported_path_max_mime_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Microsoft: 209715200 (200 MiB total MIME); Google: 26214400; SMTP: null. Lower configured and mailbox limits apply."
+          },
+          "max_mime_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Effective limit: minimum of configured and supported send-path limits."
+          },
+          "max_encoded_request_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Microsoft: 4194304 per Graph control request, not a complete-message limit; Google: 35000000 for the whole JSON send request; SMTP: null."
+          },
+          "request_encoding": {
+            "type": "string",
+            "enum": [
+              "graph_draft_and_attachment_upload",
+              "base64url_mime_json",
+              "smtp_mime"
+            ]
+          },
+          "max_attachment_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Microsoft: 150000000 decoded bytes per file; lower total MIME/configured/mailbox limits also apply. Gmail/SMTP: null because attachment space depends on MIME overhead."
+          },
+          "max_thread_id_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Gmail: 256; other backends: null."
+          },
+          "large_attachment_upload_supported": {
+            "type": "boolean",
+            "description": "True for Microsoft Graph draft/upload sessions, false for Gmail and generic SMTP."
+          },
+          "provider_policy_may_be_lower": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "encoded_request_limit_scope": {
+            "type": "string",
+            "enum": [
+              "per_control_request",
+              "entire_send_request",
+              "not_applicable"
+            ]
+          },
+          "max_draft_mime_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Microsoft base MIME excluding attachments: 3000000 bytes; other backends: null."
+          },
+          "max_upload_chunk_bytes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Microsoft sequential attachment chunk cap: 3276800 bytes; other backends: null."
+          }
+        }
+      },
+      "AccountStatus": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "backend": {
+            "type": "string",
+            "enum": [
+              "imap",
+              "microsoft",
+              "google"
+            ]
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "sending": {
+                "$ref": "#/components/schemas/SendingLimits"
+              }
+            }
+          }
+        }
+      },
+      "AppendRetryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "allow_duplicate_copy": {
+            "type": "boolean",
+            "default": false,
+            "description": "Required with a reason for deliberate duplicate-risk retry after unknown APPEND and conclusive not_found reconciliation."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        }
+      },
+      "SendStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "sending",
+              "accepted",
+              "failed",
+              "unknown"
+            ]
+          },
+          "append_status": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "pending",
+              "appending",
+              "complete",
+              "failed",
+              "unknown",
+              "expired"
+            ]
+          },
+          "append_last_error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "append_attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "append_reconciliation_state": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "matched",
+              "not_found",
+              "ambiguous",
+              "unavailable",
+              null
+            ]
+          },
+          "append_reconciliation_evidence": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "append_recoverable_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "graph_phase": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "preparing",
+              "ready",
+              "submitting",
+              "accepted",
+              "unknown",
+              "abandoned",
+              null
+            ],
+            "description": "Durable Microsoft draft/upload phase; null for other backends. Preparation resumes, final submission is never automatically repeated."
+          }
+        }
+      },
+      "SendComponentLimitExceeded": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "send_component_limit_exceeded"
+                ]
+              },
+              "backend": {
+                "type": "string",
+                "enum": [
+                  "microsoft"
+                ]
+              },
+              "component": {
+                "type": "string",
+                "enum": [
+                  "draft_mime",
+                  "decoded_attachment"
+                ]
+              },
+              "maximum_bytes": {
+                "type": "integer"
+              },
+              "actual_bytes": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

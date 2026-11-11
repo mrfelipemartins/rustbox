@@ -1,0 +1,4 @@
+# Generated test credentials, certificates, and reports
+/certs/
+/results/
+/*-results/

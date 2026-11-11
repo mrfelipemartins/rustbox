@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.4
+    command: ["--max-allowed-packet=256M"]
+    environment:
+      MYSQL_DATABASE: rustbox
+      MYSQL_USER: rustbox
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  rustbox:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://rustbox:${MYSQL_PASSWORD}@mysql:3306/rustbox
+    command: ["--config", "/etc/rustbox/config.yaml"]
+    volumes:
+      - ./config.yaml:/etc/rustbox/config.yaml:ro
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ulimits:
+      nofile:
+        soft: 16384
+        hard: 16384
+    stop_grace_period: 120s
+volumes:
+  mysql:

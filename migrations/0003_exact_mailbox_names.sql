@@ -1,0 +1,4 @@
+ALTER TABLE mailbox_checkpoints
+    MODIFY mailbox VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL;
+ALTER TABLE messages
+    MODIFY mailbox VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL;

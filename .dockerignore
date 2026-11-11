@@ -1,0 +1,16 @@
+target
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+/config.yaml
+/secrets
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.pytest_cache
+/soak-results
+/tests/soak/certs
+/tests/soak/results
+/tests/soak/*-results

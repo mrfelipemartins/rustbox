@@ -1,0 +1,55 @@
+[package]
+name = "rustbox"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "Self-hosted IMAP/SMTP service with an HTTP API and signed webhooks"
+readme = "README.md"
+
+[dependencies]
+aes-gcm = "0.10"
+anyhow = "1"
+async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
+axum = { version = "0.8", features = ["macros"] }
+base64 = "0.22"
+bytes = "1"
+chrono = { version = "0.4", features = ["serde"] }
+futures-util = "0.3"
+dotenvy = "0.15"
+jsonwebtoken = "9"
+oauth2 = { version = "5", default-features = false }
+rustls-pemfile = "2"
+serde_yaml = "0.9"
+serde_path_to_error = "0.1"
+hex = "0.4"
+hmac = "0.12"
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls", "ring", "hostname"] }
+imap-proto = "0.16"
+mail-parser = "0.11"
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "chrono", "json", "migrate", "macros"] }
+subtle = "2"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+tokio-util = "0.7"
+tower-http = { version = "0.6", features = ["trace", "limit"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+url = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+webpki-roots = "1"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

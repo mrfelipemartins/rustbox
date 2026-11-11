@@ -1,0 +1,21 @@
+services:
+  mysql:
+    mem_limit: 4g
+  dovecot:
+    mem_limit: 24g
+    pids_limit: 26000
+    volumes:
+      - ./dovecot-capacity.conf:/etc/dovecot/soak.conf:ro
+  rustbox:
+    mem_limit: 3g
+  runner:
+    mem_limit: 1g
+    command: ["python", "scripts/capacity.py"]
+    environment:
+      CAPACITY_STAGES: ${CAPACITY_STAGES:-1000,2000,4000,8000,12000,16000,20000,24000}
+      CAPACITY_STAGE_SECONDS: ${CAPACITY_STAGE_SECONDS:-60}
+      CAPACITY_MIN_AVAILABLE_GIB: "6"
+      CAPACITY_STOP_FILE: /results/capacity.stop
+      SOAK_RATE: "10"
+    volumes:
+      - ./capacity-results:/results
