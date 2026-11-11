@@ -9,6 +9,9 @@ Use Rust 1.88 or newer. Fork the repository, create a branch, and follow the [de
 Before submitting a pull request, run:
 
 ```sh
+npm ci --prefix admin
+npm test --prefix admin
+npm run build --prefix admin
 cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked --all-targets

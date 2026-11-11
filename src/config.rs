@@ -29,6 +29,7 @@ pub struct Config {
     pub oauth: OAuthConfig,
     pub native: NativeConfig,
     pub cache: CacheConfig,
+    pub admin: AdminConfig,
 }
 
 #[derive(Deserialize)]
@@ -51,6 +52,42 @@ struct Document {
     native: NativeConfig,
     #[serde(default)]
     cache: CacheConfig,
+    #[serde(default)]
+    admin: AdminConfig,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct AdminConfig {
+    pub enabled: bool,
+    pub session_hours: u64,
+    pub logs: AdminLogConfig,
+}
+impl Default for AdminConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            session_hours: 8,
+            logs: AdminLogConfig::default(),
+        }
+    }
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct AdminLogConfig {
+    pub retention_days: u32,
+    pub capacity_bytes: u64,
+    pub max_record_bytes: usize,
+}
+impl Default for AdminLogConfig {
+    fn default() -> Self {
+        Self {
+            retention_days: 7,
+            capacity_bytes: 1024 * 1024 * 1024,
+            max_record_bytes: 16 * 1024,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -303,6 +340,16 @@ impl Config {
                 "workers.webhook_concurrency",
                 doc.workers.webhook_concurrency as u64,
             ),
+            ("admin.session_hours", doc.admin.session_hours),
+            (
+                "admin.logs.retention_days",
+                u64::from(doc.admin.logs.retention_days),
+            ),
+            ("admin.logs.capacity_bytes", doc.admin.logs.capacity_bytes),
+            (
+                "admin.logs.max_record_bytes",
+                doc.admin.logs.max_record_bytes as u64,
+            ),
             ("webhooks.timeout_secs", doc.webhooks.timeout_secs),
             (
                 "webhooks.retry_window_hours",
@@ -316,6 +363,14 @@ impl Config {
             if value == 0 {
                 return Err(Error::Invalid(format!("{name} must be positive")));
             }
+        }
+        if doc.admin.session_hours > 24 * 30
+            || doc.admin.logs.retention_days > 3650
+            || doc.admin.logs.max_record_bytes < 256
+            || doc.admin.logs.max_record_bytes > 16 * 1024
+            || doc.admin.logs.capacity_bytes < doc.admin.logs.max_record_bytes as u64
+        {
+            return Err(Error::Invalid("admin limits exceed supported bounds (session <= 720 hours, retention <= 3650 days, record 256–16384 bytes, capacity >= record size)".into()));
         }
         if u64::from(doc.webhooks.retention_days) * 24 < u64::from(doc.webhooks.retry_window_hours)
         {
@@ -389,6 +444,7 @@ impl Config {
             oauth: doc.oauth,
             native: doc.native,
             cache: doc.cache,
+            admin: doc.admin,
         })
     }
 }
@@ -414,6 +470,10 @@ fn interpolate_value(value: &mut Value, path: &str, vars: &HashMap<String, Strin
                 | "cache.max_message_bytes"
                 | "cache.capacity_bytes"
                 | "cache.concurrency"
+                | "admin.session_hours"
+                | "admin.logs.retention_days"
+                | "admin.logs.capacity_bytes"
+                | "admin.logs.max_record_bytes"
                 | "oauth.concurrency" => Value::Number(
                     resolved
                         .parse::<u64>()
@@ -422,7 +482,7 @@ fn interpolate_value(value: &mut Value, path: &str, vars: &HashMap<String, Strin
                         })?
                         .into(),
                 ),
-                "security.allow_private_networks" => Value::Bool(
+                "security.allow_private_networks" | "admin.enabled" => Value::Bool(
                     resolved
                         .parse::<bool>()
                         .map_err(|_| Error::Invalid(format!("{path} must be true or false")))?,
@@ -521,6 +581,10 @@ mod tests {
         assert_eq!(c.listen.to_string(), "127.0.0.1:8080");
         assert_eq!(c.imap_concurrency, 64);
         assert!(c.oauth.providers.is_empty());
+        assert!(c.admin.enabled);
+        assert_eq!(c.admin.session_hours, 8);
+        assert_eq!(c.admin.logs.retention_days, 7);
+        assert_eq!(c.admin.logs.capacity_bytes, 1024 * 1024 * 1024);
     }
     #[test]
     fn scalar_substitution_is_not_yaml_injection() {
@@ -592,5 +656,25 @@ mod tests {
         let input = yaml()
             + "oauth:\n  providers:\n    google:\n      provider: google\n      mode: application\n      client_id: value\n      client_secret: value\n";
         assert!(parse(&input, HashMap::new()).is_err());
+    }
+    #[test]
+    fn admin_configuration_is_typed_bounded_and_substitutable() {
+        let c = parse(
+            &(yaml() + "admin:\n  enabled: '${ADMIN}'\n  session_hours: '${HOURS}'\n"),
+            HashMap::from([
+                ("ADMIN".into(), "false".into()),
+                ("HOURS".into(), "2".into()),
+            ]),
+        )
+        .unwrap();
+        assert!(!c.admin.enabled);
+        assert_eq!(c.admin.session_hours, 2);
+        for suffix in [
+            "admin:\n  session_hours: 0\n",
+            "admin:\n  logs:\n    max_record_bytes: 32\n",
+            "admin:\n  logs:\n    capacity_bytes: 1\n",
+        ] {
+            assert!(parse(&(yaml() + suffix), HashMap::new()).is_err());
+        }
     }
 }

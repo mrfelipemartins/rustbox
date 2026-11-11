@@ -34,6 +34,8 @@ pub enum Error {
         maximum_bytes: usize,
         actual_bytes: usize,
     },
+    #[error("provider resource not found (code: {code}, request: {request_id})")]
+    ProviderNotFound { code: String, request_id: String },
     #[error("not found")]
     NotFound,
     #[error("{0}")]
@@ -78,6 +80,9 @@ impl IntoResponse for Error {
                 StatusCode::PAYLOAD_TOO_LARGE,
                 "send_component_limit_exceeded",
             ),
+            Self::ProviderNotFound { .. } => {
+                (StatusCode::BAD_GATEWAY, "provider_resource_not_found")
+            }
             Self::NotFound => (StatusCode::NOT_FOUND, "not_found"),
             Self::Conflict(_) => (StatusCode::CONFLICT, "conflict"),
             Self::Unavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "unavailable"),

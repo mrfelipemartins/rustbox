@@ -227,7 +227,7 @@ pub async fn submit(
                             progress.attachments[index].final_chunk_pending = false;
                         }
                     }
-                    Err(Error::NotFound) => {
+                    Err(Error::NotFound | Error::ProviderNotFound { .. }) => {
                         progress.attachments[index].session = None;
                         progress.attachments[index].offset = 0;
                     }

@@ -14,6 +14,7 @@ async fn account_commit_guard_rejects_pause_configuration_change_and_deletion() 
     sqlx::migrate!().run(&pool).await?;
     let db = Arc::new(Db::new(pool, Crypto::new(&[42; 32])?));
     let config = Arc::new(Config {
+        admin: Default::default(),
         database_url,
         listen: "127.0.0.1:0".parse()?,
         api_keys: HashMap::new(),
@@ -38,6 +39,41 @@ async fn account_commit_guard_rejects_pause_configuration_change_and_deletion() 
         json!({"name":"guard","backend":"microsoft","credential_id":credential.id,"target_mailbox":"target@example.com","shared":true}),
     )?;
     let account = db.create_account(input).await?;
+    let run = runtime.schedule(&account.id).await?;
+    sqlx::query("UPDATE sync_runs SET state='running' WHERE id=?")
+        .bind(&run)
+        .execute(&db.pool)
+        .await?;
+    runtime
+        .failed(
+            &account.id,
+            Error::ProviderNotFound {
+                code: "ErrorItemNotFound".into(),
+                request_id: "test-request".into(),
+            },
+        )
+        .await?;
+    let failure: (String, bool) = sqlx::query_as(
+        "SELECT last_error,next_sync_at>UTC_TIMESTAMP(6) FROM native_state WHERE account_id=?",
+    )
+    .bind(&account.id)
+    .fetch_one(&db.pool)
+    .await?;
+    assert_eq!(failure, ("provider_resource_not_found".into(), true));
+    let completed: (String, bool) =
+        sqlx::query_as("SELECT state,finished_at IS NOT NULL FROM sync_runs WHERE id=?")
+            .bind(&run)
+            .fetch_one(&db.pool)
+            .await?;
+    assert_eq!(completed, ("failed".into(), true));
+    // A missing resource must not disappear silently while the account still exists.
+    runtime.failed(&account.id, Error::NotFound).await?;
+    let failure: String =
+        sqlx::query_scalar("SELECT last_error FROM native_state WHERE account_id=?")
+            .bind(&account.id)
+            .fetch_one(&db.pool)
+            .await?;
+    assert_eq!(failure, "not_found");
     let mut tx = db.pool.begin().await?;
     runtime.guard(&mut tx, &account).await?;
     tx.rollback().await?;
@@ -101,6 +137,7 @@ async fn microsoft_sent_cutoff_survives_native_persistence_filter() -> anyhow::R
     sqlx::migrate!().run(&pool).await?;
     let db = Arc::new(Db::new(pool, Crypto::new(&[42; 32])?));
     let config = Arc::new(Config {
+        admin: Default::default(),
         database_url,
         listen: "127.0.0.1:0".parse()?,
         api_keys: HashMap::new(),

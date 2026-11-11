@@ -43,3 +43,32 @@ Set `native.public_url` to the public HTTPS base URL used for provider callbacks
 For Gmail push configure `native.gmail_topic`, `native.pubsub_audience`, and `native.pubsub_email`. The topic's project must match the OAuth application project. Installations with multiple Google OAuth projects can supply `native.gmail_topics`, a mapping from registration IDs to topic names, overriding the default topic. Pub/Sub subscriptions and IAM are provisioned by the operator. Accounts without complete push configuration continue polling.
 
 `cache.retention_days` defaults to 7, `cache.max_message_bytes` to 26214400, `cache.capacity_bytes` to 10737418240, and `cache.concurrency` to 4. Capacity counts raw MIME bytes; encryption adds a small storage overhead. Rustbox does not evict promised content before its readiness deadline. Configure MySQL disk capacity and maximum packet size for the selected message limit.
+
+## Admin panel and operational logs
+
+The React admin panel is served at `/admin` and is enabled by default. Set
+`admin.enabled: false` to remove its pages and admin-specific API routes. Existing
+application API keys can all log in; there are no separate users or roles.
+`admin.session_hours` defaults to 8 (maximum 720). Sessions are held in memory and
+end after a server restart. Use HTTPS outside loopback development.
+
+`admin.logs.retention_days` defaults to 7, `admin.logs.capacity_bytes` to
+1073741824 (1 GiB), and `admin.logs.max_record_bytes` to 16384 (16 KiB).
+Oldest records are removed when retention or payload capacity is reached. The
+capacity accounts for serialized record payloads; MySQL row, index, and transaction
+overhead require additional disk space. Retention cleanup runs at startup and
+at least every 60 seconds while persistence is available; capacity is checked
+in each persisted batch. Record size may be reduced to 256 bytes minimum and
+cannot exceed 16 KiB. Configuration changes require restart.
+
+The bounded, asynchronous log sink retains stdout logging and never blocks mail
+workers. A database outage or a full buffer drops records and increments the
+process-local dropped-record counter shown in the panel. Logs already committed
+to MySQL survive restarts; the dropped counter resets on restart. Only reviewed
+static operational messages, numeric counters, and UUID correlation identifiers
+are persisted. Free-form provider errors, URLs, credentials, headers, message
+bodies, and attachment contents are excluded; unreviewed messages appear as a
+generic event. Consult deployment stdout tooling for diagnostics omitted from
+the persisted view. Startup failures before the log worker starts are available
+only in stdout. Disabling admin also disables log capture; the database migration
+and existing records remain until administration is enabled and pruning resumes.

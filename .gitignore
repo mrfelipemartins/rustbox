@@ -1,5 +1,9 @@
 # Rust build output (keep Cargo.lock for reproducible application builds)
 /target/
+/admin/node_modules/
+/admin/dist/
+/admin/test-results/
+/admin/playwright-report/
 
 # Local configuration and secrets
 .env

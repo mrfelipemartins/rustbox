@@ -9,13 +9,21 @@ use rustbox::{
 use sqlx::mysql::MySqlPoolOptions;
 use std::{sync::Arc, time::Duration};
 use tokio_util::sync::CancellationToken;
+use tracing_subscriber::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config = Arc::new(Config::load()?);
-    tracing_subscriber::fmt()
-        .json()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_new(&config.log_filter)?)
+    let (log_layer, log_receiver) = if config.admin.enabled {
+        let (layer, receiver) = rustbox::admin_logs::channel(&config.admin.logs);
+        (Some(layer), Some(receiver))
+    } else {
+        (None, None)
+    };
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::try_new(&config.log_filter)?)
+        .with(tracing_subscriber::fmt::layer().json())
+        .with(log_layer)
         .init();
     let _ = rustls::crypto::ring::default_provider().install_default();
     let listener = tokio::net::TcpListener::bind(config.listen).await?;
@@ -40,6 +48,14 @@ async fn main() -> anyhow::Result<()> {
     accounts.oauth.validate_registrations().await?;
     accounts.start_all().await?;
     let shutdown = CancellationToken::new();
+    let log_worker = log_receiver.map(|receiver| {
+        tokio::spawn(rustbox::admin_logs::run(
+            db.clone(),
+            receiver,
+            config.admin.logs.clone(),
+            shutdown.clone(),
+        ))
+    });
     let runtime = Arc::new(rustbox::native::Runtime::new(
         db.clone(),
         config.clone(),
@@ -73,9 +89,12 @@ async fn main() -> anyhow::Result<()> {
     };
     let signal = shutdown.clone();
     let mut server = tokio::spawn(async move {
-        axum::serve(listener, api::router(state))
-            .with_graceful_shutdown(signal.cancelled_owned())
-            .await
+        axum::serve(
+            listener,
+            api::router(state).into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .with_graceful_shutdown(signal.cancelled_owned())
+        .await
     });
     let mut native_finished = false;
     let mut event_finished = false;
@@ -111,6 +130,9 @@ async fn main() -> anyhow::Result<()> {
         accounts.shutdown().await;
         if !event_finished {
             let _ = (&mut event_worker).await;
+        }
+        if let Some(worker) = log_worker {
+            let _ = worker.await;
         }
         db.pool.close().await;
     })

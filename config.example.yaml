@@ -72,3 +72,13 @@ cache:
   max_message_bytes: 26214400
   capacity_bytes: 10737418240
   concurrency: 4
+
+# Browser administration, served by Rustbox at /admin.
+admin:
+  enabled: true
+  session_hours: 8
+  logs:
+    retention_days: 7
+    # Stored record payload only; MySQL rows and indexes add overhead.
+    capacity_bytes: 1073741824
+    max_record_bytes: 16384

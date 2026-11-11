@@ -4,6 +4,8 @@
 
 Install Rust and MySQL 8.0+ or use Docker Compose. Configure MySQL with `max_allowed_packet=64M`. Generate secrets with `openssl rand -base64 32` for `ENCRYPTION_KEY` and `openssl rand -hex 32` for each app key.
 
+For native builds, install Node.js 24 and run `npm ci --prefix admin` followed by `npm run build --prefix admin` before compiling Rust. The admin assets are embedded in the binary. Docker builds include this step automatically.
+
 Copy [`config.example.yaml`](../config.example.yaml) to `config.yaml` and [`.env.example`](../.env.example) to `.env`. Fill in `DATABASE_URL`, `ENCRYPTION_KEY`, and `MAIN_APP_API_KEY`. The binary automatically loads `.env` beside the selected YAML file; run `cargo run --release` or `cargo run --release -- --config /path/to/config.yaml`. For Docker Compose, also set `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` in `.env`. Use URL-safe database passwords for the generated connection URL.
 
 Migrations run at startup. Keep the encryption key stable and backed up separately from MySQL; changing it makes stored credentials and queued mail unreadable. Run only one Rustbox instance for a database. A systemd unit is available in `deploy/rustbox.service`.
@@ -29,4 +31,6 @@ curl --fail http://127.0.0.1:8080/health/ready
 ```
 
 Next, [connect an account](api.md#connect-an-account). See [configuration](configuration.md) for available settings. Native builds require Rust 1.88 or newer. Run all documented commands from the repository root.
+
+You can also open `/admin` and sign in with `MAIN_APP_API_KEY` to connect mailboxes and monitor the service. See the [admin guide](admin.md).
 

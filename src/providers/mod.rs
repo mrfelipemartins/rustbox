@@ -99,6 +99,43 @@ pub fn metrics() -> Value {
     json!({"google":values(&GOOGLE_STATE),"microsoft":values(&MICROSOFT_STATE)})
 }
 
+fn diagnostic_identifier(value: Option<&str>) -> String {
+    value
+        .filter(|v| {
+            !v.is_empty()
+                && v.len() <= 128
+                && v.bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+        })
+        .unwrap_or("unavailable")
+        .to_owned()
+}
+
+async fn provider_not_found(response: reqwest::Response) -> Error {
+    let request_id = diagnostic_identifier(
+        response
+            .headers()
+            .get("request-id")
+            .and_then(|v| v.to_str().ok()),
+    );
+    let mut stream = response.bytes_stream();
+    let mut body = Vec::new();
+    while let Some(Ok(chunk)) = stream.next().await {
+        if body.len() + chunk.len() > 16_384 {
+            return Error::ProviderNotFound {
+                code: "unavailable".into(),
+                request_id,
+            };
+        }
+        body.extend_from_slice(&chunk);
+    }
+    let value: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
+    Error::ProviderNotFound {
+        code: diagnostic_identifier(value["error"]["code"].as_str()),
+        request_id,
+    }
+}
+
 fn normalized_headers(headers: &[Value]) -> Result<Value> {
     let mut raw = String::from("MIME-Version: 1.0\r\n");
     for header in headers {
@@ -552,7 +589,7 @@ impl NativeClient {
                         "provider rejected synchronization request".into(),
                     ));
                 }
-                404 => return Err(Error::NotFound),
+                404 => return Err(provider_not_found(response).await),
                 410 => return Err(Error::Conflict("provider cursor expired".into())),
                 429 => {
                     let seconds = response
@@ -689,12 +726,37 @@ fn query(path: &str, pairs: &[(&str, String)]) -> String {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn provider_404_preserves_safe_diagnostics_without_raw_message() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = axum::Router::new().fallback(|| async {
+            (axum::http::StatusCode::NOT_FOUND,
+             [("request-id", "33930b08-67d3-4e23-bf35-086538e13d47")],
+             axum::Json(json!({"error":{"code":"ErrorItemNotFound","message":"private mailbox secret"}})))
+        });
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let response = reqwest::get(format!("http://{address}")).await.unwrap();
+        let error = provider_not_found(response).await;
+        assert!(
+            matches!(&error, Error::ProviderNotFound { code, request_id }
+            if code == "ErrorItemNotFound" && request_id == "33930b08-67d3-4e23-bf35-086538e13d47")
+        );
+        assert!(!error.to_string().contains("private mailbox"));
+        assert_eq!(
+            diagnostic_identifier(Some("secret@example.com")),
+            "unavailable"
+        );
+        assert_eq!(diagnostic_identifier(Some(&"x".repeat(129))), "unavailable");
+        server.abort();
+    }
+
     fn account(backend: Backend) -> Account {
         Account { id:uuid::Uuid::new_v4().to_string(),config:serde_json::from_value(json!({"name":"native","backend":backend,"target_mailbox":"mailbox@example.com","credential_id":uuid::Uuid::new_v4().to_string(),"sync_from":"2026-01-01T00:00:00Z"})).unwrap(),state:crate::db::LifecycleState::Created,smtp_state:"unvalidated".into(),last_connected_at:None,last_disconnected_at:None,next_retry_at:None,retry_count:0,last_error:None }
     }
 
     pub(super) fn config() -> Config {
-        Config {native:Default::default(),cache:Default::default(),database_url:String::new(),listen:"127.0.0.1:0".parse().unwrap(),api_keys:Default::default(),encryption_key:vec![42;32],allow_private_networks:false,tls_ca_file:None,log_filter:String::new(),max_message_bytes:1024*1024,imap_concurrency:8,smtp_concurrency:8,webhook_concurrency:8,command_timeout_secs:60,webhooks:Default::default(),oauth:serde_json::from_value(json!({"providers":{"test":{"provider":"microsoft","mode":"delegated","tenant":"common","client_id":"client","client_secret":"secret"}}})).unwrap() }
+        Config {admin: Default::default(), native:Default::default(),cache:Default::default(),database_url:String::new(),listen:"127.0.0.1:0".parse().unwrap(),api_keys:Default::default(),encryption_key:vec![42;32],allow_private_networks:false,tls_ca_file:None,log_filter:String::new(),max_message_bytes:1024*1024,imap_concurrency:8,smtp_concurrency:8,webhook_concurrency:8,command_timeout_secs:60,webhooks:Default::default(),oauth:serde_json::from_value(json!({"providers":{"test":{"provider":"microsoft","mode":"delegated","tenant":"common","client_id":"client","client_secret":"secret"}}})).unwrap() }
     }
 
     #[tokio::test]

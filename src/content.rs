@@ -35,7 +35,7 @@ pub async fn fetch(runtime: &Runtime, account: &str, message: &str) -> Result<Ve
     provider_fetch(runtime, account, message)
         .await
         .map_err(|e| match e {
-            Error::NotFound | Error::Invalid(_) => {
+            Error::NotFound | Error::ProviderNotFound { .. } | Error::Invalid(_) => {
                 Error::ContentUnavailable("provider_content_missing".into())
             }
             e => e,
@@ -72,7 +72,7 @@ async fn provider_fetch(runtime: &Runtime, account: &str, message: &str) -> Resu
             .await;
         match result {
             Ok(Reply::Content(raw)) => return Ok(raw),
-            Err(Error::NotFound | Error::Invalid(_)) => continue,
+            Err(Error::NotFound | Error::ProviderNotFound { .. } | Error::Invalid(_)) => continue,
             Err(e) => return Err(e),
             _ => {}
         }
@@ -110,7 +110,12 @@ async fn cache(rt: &Runtime, account: &str, id: &str) -> Result<()> {
     let raw = match provider_fetch(rt, account, id).await {
         Ok(raw) => raw,
         Err(Error::Unsupported(_)) => return unavailable(rt, account, id, "too_large").await,
-        Err(Error::NotFound | Error::ContentUnavailable(_) | Error::Invalid(_)) => {
+        Err(
+            Error::NotFound
+            | Error::ProviderNotFound { .. }
+            | Error::ContentUnavailable(_)
+            | Error::Invalid(_),
+        ) => {
             return unavailable(rt, account, id, "provider_content_missing").await;
         }
         Err(_) => {
@@ -248,6 +253,7 @@ mod tests {
         let db = Arc::new(Db::new(pool, Crypto::new(&[42; 32])?));
         let raw=b"Message-ID: <cache@test>\r\nFrom: person@test\r\nTo: other@test\r\nSubject: Cache\r\n\r\ncontent".to_vec();
         let mut config = Config {
+            admin: Default::default(),
             database_url: url,
             listen: "127.0.0.1:0".parse()?,
             api_keys: Default::default(),

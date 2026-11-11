@@ -76,7 +76,7 @@ pub(super) async fn sync_page(
         query("/history", &pairs)
     };
     let page = match client.json(account, Method::GET, &path, None, false).await {
-        Err(Error::NotFound) if state.phase == "history" => {
+        Err(Error::NotFound | Error::ProviderNotFound { .. }) if state.phase == "history" => {
             return Ok(SyncPage {
                 reset: true,
                 ..Default::default()
@@ -121,7 +121,7 @@ pub(super) async fn sync_page(
                 messages.push(message);
             }
             Ok(_) => {}
-            Err(Error::NotFound) => {
+            Err(Error::NotFound | Error::ProviderNotFound { .. }) => {
                 removed.insert(id);
             }
             Err(e) => return Err(e),

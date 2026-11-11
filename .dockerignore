@@ -1,4 +1,8 @@
 target
+admin/node_modules
+admin/dist
+admin/test-results
+admin/playwright-report
 .git
 .env
 .env.*

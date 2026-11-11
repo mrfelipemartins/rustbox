@@ -56,6 +56,7 @@ async fn manager(endpoint: String) -> anyhow::Result<OAuth> {
     sqlx::migrate!().run(&pool).await?;
     let db = Arc::new(Db::new(pool, Crypto::new(&[42; 32])?));
     let config = Config {
+        admin: Default::default(),
         cache: Default::default(),
         native: Default::default(),
         database_url: String::new(),

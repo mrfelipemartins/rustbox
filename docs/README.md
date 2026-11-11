@@ -9,6 +9,7 @@
 3. [API guide](api.md): accounts, messages, mailbox operations, and sending.
 4. [Events and webhooks](webhooks.md): signatures, retries, and replay.
 5. [Deployment](deployment.md): operation and backups.
+6. [Admin panel](admin.md): mailbox administration, monitoring, sessions, and frontend development.
 
 The [OpenAPI specification](../openapi.json) is the endpoint schema reference.
 

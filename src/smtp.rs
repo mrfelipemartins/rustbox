@@ -1963,6 +1963,7 @@ mod tests {
             })
             .await?;
         let config = Config {
+            admin: Default::default(),
             oauth: Default::default(),
             native: Default::default(),
             cache: Default::default(),
@@ -2147,6 +2148,7 @@ mod tests {
         )?;
         let account = db.create_account(input).await?;
         let config = Arc::new(Config {
+            admin: Default::default(),
             database_url,
             listen: "127.0.0.1:0".parse()?,
             api_keys: Default::default(),
@@ -2380,6 +2382,7 @@ mod tests {
         assert!(native_mime(&envelope, raw)?.len() > raw.len());
         let raw_len = raw.len();
         let config = Config {
+            admin: Default::default(),
             database_url,
             listen: "127.0.0.1:0".parse()?,
             api_keys: Default::default(),

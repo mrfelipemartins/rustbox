@@ -21,6 +21,7 @@ Follow the [setup guide](docs/getting-started.md) to run with Docker Compose or 
 ## Documentation
 
 - [Configuration](docs/configuration.md) and [deployment](docs/deployment.md)
+- [Admin panel](docs/admin.md) at `/admin` (enabled by default)
 - [OAuth onboarding and provider setup](docs/oauth.md)
 - [Native providers and reliable integration](docs/providers.md)
 - [API guide](docs/api.md) and [OpenAPI specification](openapi.json)

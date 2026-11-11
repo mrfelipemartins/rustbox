@@ -217,6 +217,7 @@ impl Fixture {
         sqlx::migrate!().run(&pool).await?;
         let db = Arc::new(Db::new(pool, Crypto::new(&[42; 32])?));
         let config = Arc::new(Config {
+            admin: Default::default(),
             database_url,
             listen: "127.0.0.1:0".parse()?,
             api_keys: HashMap::new(),

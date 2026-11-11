@@ -202,7 +202,7 @@ pub(super) async fn sync_page(
                     fetched = value;
                     &fetched
                 }
-                Err(Error::NotFound) => {
+                Err(Error::NotFound | Error::ProviderNotFound { .. }) => {
                     result.removed.push(id.into());
                     continue;
                 }
@@ -405,7 +405,7 @@ pub(super) async fn subscription(
             )
             .await;
         match renewed {
-            Err(Error::NotFound) => {
+            Err(Error::NotFound | Error::ProviderNotFound { .. }) => {
                 client
                     .json(
                         account,

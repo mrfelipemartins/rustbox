@@ -3,6 +3,9 @@
 [Documentation](README.md) · [Rustbox](../README.md)
 
 ```sh
+npm ci --prefix admin
+npm test --prefix admin
+npm run build --prefix admin
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test --all-targets

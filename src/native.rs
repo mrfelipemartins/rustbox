@@ -109,7 +109,12 @@ impl Runtime {
     }
     async fn failed(&self, id: &str, error: Error) -> Result<()> {
         if matches!(error, Error::NotFound) {
-            return Ok(());
+            // Only deletion of the local account makes a missing resource harmless.
+            match self.db.get_account(id).await {
+                Err(Error::NotFound) => return Ok(()),
+                Err(error) => return Err(error),
+                Ok(_) => {}
+            }
         }
         if matches!(
             error,
@@ -511,6 +516,7 @@ pub fn sanitized(error: &Error) -> &'static str {
     match error {
         Error::OAuth { code, .. } => code,
         Error::Throttled(_) => "throttled",
+        Error::ProviderNotFound { .. } => "provider_resource_not_found",
         Error::NotFound => "not_found",
         _ => "provider_unavailable",
     }

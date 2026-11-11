@@ -26,6 +26,17 @@ jobs:
           --health-retries=12
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+      - name: Admin dependencies
+        run: npm ci --prefix admin
+      - name: Admin checks and production assets
+        run: npm run build --prefix admin
+      - name: Admin unit tests
+        run: npm test --prefix admin
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - name: Formatting

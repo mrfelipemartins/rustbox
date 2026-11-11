@@ -35,8 +35,8 @@ pub struct AppState {
 #[derive(Clone)]
 pub(crate) struct AppId(pub(crate) String);
 
-pub fn router(state: AppState) -> Router {
-    let protected = Router::new()
+pub(crate) fn operations() -> Router<AppState> {
+    Router::new()
         .merge(crate::oauth::api::routes())
         .route("/v1/accounts", get(list_accounts).post(create_account))
         .route(
@@ -73,8 +73,12 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/sends/{id}/append/retry", post(retry_append))
         .route("/v1/events", get(list_events))
         .route("/metrics", get(metrics))
-        .route_layer(middleware::from_fn_with_state(state.clone(), authenticate));
-    Router::new()
+}
+
+pub fn router(state: AppState) -> Router {
+    let protected =
+        operations().route_layer(middleware::from_fn_with_state(state.clone(), authenticate));
+    let mut router = Router::new()
         .merge(protected)
         .merge(crate::notifications::routes())
         .route("/health/live", get(|| async { StatusCode::OK }))
@@ -87,7 +91,13 @@ pub fn router(state: AppState) -> Router {
                     include_str!("../openapi.json"),
                 )
             }),
-        )
+        );
+    if state.config.admin.enabled {
+        router = router
+            .merge(crate::admin::routes(state.clone()))
+            .merge(crate::admin_assets::routes());
+    }
+    router
         .layer(DefaultBodyLimit::max(
             state.config.max_message_bytes.saturating_mul(2),
         ))
@@ -161,7 +171,7 @@ async fn validate_account(
     Ok(())
 }
 
-async fn account_public(s: &AppState, account: &crate::db::Account) -> Result<Value> {
+pub(crate) async fn account_public(s: &AppState, account: &crate::db::Account) -> Result<Value> {
     let mut value = account.public();
     for (protocol, server) in [
         ("imap", &account.config.imap),
@@ -252,7 +262,9 @@ pub(crate) fn validate_smtp(s: AppState, id: String) {
             .await
             .is_ok_and(|a| a.config.backend.is_native())
         {
-            let _ = s.runtime.schedule(&id).await;
+            if let Err(error) = s.runtime.schedule(&id).await {
+                tracing::warn!(account_id=%id, error=crate::native::sanitized(&error), "native sync scheduling failed");
+            }
             return;
         }
         if let Err(error) = smtp::validate(&s.db, &s.config, &s.oauth, &id).await {
@@ -261,7 +273,7 @@ pub(crate) fn validate_smtp(s: AppState, id: String) {
     });
 }
 
-async fn update_account(
+pub(crate) async fn update_account(
     State(s): State<AppState>,
     Path(id): Path<String>,
     Json(input): Json<AccountInput>,
@@ -701,6 +713,7 @@ mod tests {
         let config = Arc::new(Config {
             database_url: String::new(),
             listen: "127.0.0.1:8080".parse().unwrap(),
+            admin: Default::default(),
             api_keys: std::collections::HashMap::from([("test".into(), "x".repeat(32))]),
             encryption_key: vec![7; 32],
             allow_private_networks: false,

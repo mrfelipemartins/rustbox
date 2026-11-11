@@ -1474,6 +1474,2552 @@
           }
         }
       }
+    },
+    "/admin/api/session": {
+      "post": {
+        "summary": "Exchange an application API key for an eight-hour admin session",
+        "tags": [
+          "Admin"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key"
+          },
+          "429": {
+            "description": "Login rate limit exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "api_key"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Read the current session and CSRF token",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Invalidate the current session",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session invalidated"
+          }
+        }
+      }
+    },
+    "/admin/api/overview": {
+      "get": {
+        "summary": "Current health, queue depths, attention items, and recent events",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/system": {
+      "get": {
+        "summary": "Allowlisted effective configuration and runtime information",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/mailboxes": {
+      "get": {
+        "summary": "Filter mailboxes without secrets",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "microsoft",
+                "imap"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/credentials": {
+      "get": {
+        "summary": "Filter OAuth credentials and linked mailboxes without secrets",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "microsoft",
+                "imap"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/sends": {
+      "get": {
+        "summary": "Filter send jobs with submission, reconciliation, and copy outcomes",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "microsoft",
+                "imap"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/syncs": {
+      "get": {
+        "summary": "Filter native sync runs; scoped queries also return IMAP checkpoints",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/events": {
+      "get": {
+        "summary": "Browse retained business events, newest first",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/deliveries": {
+      "get": {
+        "summary": "Browse outgoing webhook delivery summaries",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/logs": {
+      "get": {
+        "summary": "Browse sanitized persistent operational logs and retention/drop metadata",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TRACE",
+                "DEBUG",
+                "INFO",
+                "WARN",
+                "ERROR"
+              ]
+            }
+          },
+          {
+            "name": "component",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "send_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sync_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/v1/accounts": {
+      "get": {
+        "summary": "List accounts without secrets",
+        "operationId": "admin_get__v1_accounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AccountStatus"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "post": {
+        "summary": "Create account and begin connecting",
+        "operationId": "admin_post__v1_accounts",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}": {
+      "get": {
+        "summary": "Get account lifecycle and connection status",
+        "operationId": "admin_get__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "put": {
+        "summary": "Replace account configuration and reconnect",
+        "operationId": "admin_put__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "delete": {
+        "summary": "Disconnect and delete local account data",
+        "operationId": "admin_delete__v1_accounts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/pause": {
+      "post": {
+        "summary": "Pause account monitoring",
+        "operationId": "admin_post__v1_accounts_id_pause",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/pause. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/resume": {
+      "post": {
+        "summary": "Resume account monitoring",
+        "operationId": "admin_post__v1_accounts_id_resume",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/resume. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/folders": {
+      "get": {
+        "summary": "List provider folders",
+        "operationId": "admin_get__v1_accounts_id_folders",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/folders. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/messages": {
+      "get": {
+        "summary": "List indexed messages with stable Rustbox IDs and location records",
+        "operationId": "admin_get__v1_accounts_id_messages",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mailbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/messages. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/flags": {
+      "patch": {
+        "summary": "Synchronously flags message",
+        "operationId": "admin_patch__v1_accounts_id_flags",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagsInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/flags. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/move": {
+      "post": {
+        "summary": "Synchronously move message",
+        "operationId": "admin_post__v1_accounts_id_move",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/move. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/trash": {
+      "post": {
+        "summary": "Synchronously trash message",
+        "operationId": "admin_post__v1_accounts_id_trash",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRef"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/trash. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/send": {
+      "post": {
+        "summary": "Queue structured email; no automatic retry on unknown outcome",
+        "operationId": "admin_post__v1_accounts_id_send",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Total MIME or Graph draft/attachment exceeds an exposed limit before queueing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SendComponentLimitExceeded"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendRequest"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/send. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/sends/{id}": {
+      "get": {
+        "summary": "Get send acceptance and Sent-append status",
+        "operationId": "admin_get__v1_sends_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission status and separate Sent-copy recovery status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/sends/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/events": {
+      "get": {
+        "summary": "Recover events in commit order; expired cursors return 410",
+        "operationId": "admin_get__v1_events",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Event"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/events. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/clients": {
+      "get": {
+        "summary": "List configured OAuth registrations",
+        "operationId": "admin_get__v1_oauth_clients",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClients"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/clients. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/authorizations": {
+      "post": {
+        "summary": "Start app-owned OAuth consent",
+        "operationId": "admin_post__v1_oauth_authorizations",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorizationCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthAuthorizationInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/authorizations. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/authorizations/{id}": {
+      "get": {
+        "summary": "Read an authorization owned by this API application",
+        "operationId": "admin_get__v1_oauth_authorizations_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorization"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/authorizations/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "delete": {
+        "summary": "Cancel unfinished authorization",
+        "operationId": "admin_delete__v1_oauth_authorizations_id",
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/authorizations/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/authorizations/{id}/complete": {
+      "post": {
+        "summary": "Exchange callback code or record denial",
+        "operationId": "admin_post__v1_oauth_authorizations_id_complete",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAuthorization"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCompletionInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/authorizations/{id}/complete. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/credentials": {
+      "post": {
+        "summary": "Validate and import credentials",
+        "operationId": "admin_post__v1_oauth_credentials",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCredentialInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/credentials. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/oauth/credentials/{id}": {
+      "get": {
+        "summary": "Read credential health without secrets",
+        "operationId": "admin_get__v1_oauth_credentials_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/credentials/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "put": {
+        "summary": "Replace delegated refresh credentials",
+        "operationId": "admin_put__v1_oauth_credentials_id",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCredential"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCredentialReplacement"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/credentials/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      },
+      "delete": {
+        "summary": "Delete an unreferenced credential locally",
+        "operationId": "admin_delete__v1_oauth_credentials_id",
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/oauth/credentials/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/messages/{message_id}/content": {
+      "get": {
+        "summary": "Get parsed MIME or raw RFC822 content without marking read",
+        "operationId": "admin_get__v1_accounts_id_content",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "raw",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Content unavailable from provider and expired or absent from cache"
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/messages/{message_id}/content. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/messages/{message_id}/attachments/{index}": {
+      "get": {
+        "summary": "Download attachment by zero-based parsed MIME index",
+        "operationId": "admin_get__v1_accounts_id_attachments_index",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/messages/{message_id}/attachments/{index}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/messages/{message_id}": {
+      "get": {
+        "summary": "Read message metadata, content state and locations",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "admin_get__v1_accounts_{id}_messages_{message_id}",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/messages/{message_id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/labels": {
+      "post": {
+        "summary": "Modify Gmail label memberships",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelsInput"
+              }
+            }
+          }
+        },
+        "operationId": "admin_post__v1_accounts_{id}_labels",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/labels. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/accounts/{id}/sync": {
+      "post": {
+        "summary": "Schedule or join account synchronization",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "admin_post__v1_accounts_{id}_sync",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}/sync. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/syncs/{id}": {
+      "get": {
+        "summary": "Read synchronization-run status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "admin_get__v1_syncs_{id}",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/syncs/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/sends/{id}/reconcile": {
+      "post": {
+        "summary": "Inspect Sent evidence without resubmission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "admin_post__v1_sends_{id}_reconcile",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/sends/{id}/reconcile. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/sends/{id}/resolve": {
+      "post": {
+        "summary": "Record an explicit send resolution without resubmission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendResolution"
+              }
+            }
+          }
+        },
+        "operationId": "admin_post__v1_sends_{id}_resolve",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/sends/{id}/resolve. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/sends/{id}/append/reconcile": {
+      "post": {
+        "summary": "Reconcile an accepted email\u2019s optional Sent copy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Copy recovery status; delivery remains accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Copy state, evidence, configuration, or retention deadline blocks recovery"
+          }
+        },
+        "operationId": "admin_post__v1_sends_{id}_append_reconcile",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/sends/{id}/append/reconcile. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/v1/sends/{id}/append/retry": {
+      "post": {
+        "summary": "Retry the optional Sent copy without resending the email",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Copy recovery status; delivery remains accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Copy state, evidence, configuration, or retention deadline blocks recovery"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendRetryRequest"
+              }
+            }
+          }
+        },
+        "operationId": "admin_post__v1_sends_{id}_append_retry",
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/sends/{id}/append/retry. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
+    },
+    "/admin/api/mailboxes/{id}": {
+      "put": {
+        "summary": "Edit a mailbox while preserving omitted stored passwords and webhook secret",
+        "operationId": "admin_save_mailbox",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountInput"
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin operations"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "adminCsrf": []
+          }
+        ],
+        "description": "Session-authenticated alias of /v1/accounts/{id}. Uses the same service operation, application identity, validation, and idempotency rules."
+      }
     }
   },
   "components": {
@@ -1481,6 +4027,18 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer"
+      },
+      "adminSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "rustbox_admin",
+        "description": "Opaque admin session obtained by exchanging any application key. HttpOnly, SameSite cookie scoped to /admin."
+      },
+      "adminCsrf": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token",
+        "description": "Session CSRF token returned by the session endpoint; required for mutations."
       }
     },
     "schemas": {
@@ -2433,6 +4991,56 @@
                 "type": "integer"
               }
             }
+          }
+        }
+      },
+      "AdminSession": {
+        "type": "object",
+        "required": [
+          "application",
+          "csrf_token",
+          "expires_at"
+        ],
+        "properties": {
+          "application": {
+            "type": "string"
+          },
+          "csrf_token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "minimum": 1
           }
         }
       }

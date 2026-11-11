@@ -386,7 +386,7 @@ impl NativeClient {
         draft_id: &str,
     ) -> Result<Option<ProviderMessage>> {
         let value=match self.json(account,Method::GET,&format!("/messages/{}?$select=id,parentFolderId,internetMessageId,internetMessageHeaders,receivedDateTime,sentDateTime,isDraft,from,sender,toRecipients,ccRecipients,bccRecipients,replyTo,subject,isRead,flag",segment(draft_id)),None,false).await {
-            Ok(value)=>value,Err(Error::NotFound)=>return Ok(None),Err(error)=>return Err(error),
+            Ok(value)=>value,Err(Error::NotFound | Error::ProviderNotFound { .. })=>return Ok(None),Err(error)=>return Err(error),
         };
         if value["isDraft"].as_bool() != Some(false) {
             return Ok(None);

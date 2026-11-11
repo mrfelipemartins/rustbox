@@ -1,4 +1,7 @@
 pub mod accounts;
+pub mod admin;
+pub mod admin_assets;
+pub mod admin_logs;
 pub mod api;
 pub mod config;
 pub mod content;
