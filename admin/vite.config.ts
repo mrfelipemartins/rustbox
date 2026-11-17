@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      "/admin/api": { target: "http://127.0.0.1:8080", changeOrigin: false },
+      "/admin/api": {
+        target: process.env.RUSTBOX_API_URL || "http://127.0.0.1:8080",
+        changeOrigin: false,
+      },
     },
   },
 });

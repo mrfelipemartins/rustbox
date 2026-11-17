@@ -33,23 +33,63 @@ export function Heading({
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow || "WORKSPACE"}</div>
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
-      <div className="actions">{children}</div>
+      {children && <div className="actions">{children}</div>}
     </div>
   );
 }
+const GOOD =
+  /^(ready|connected|healthy|accepted|delivered|complete|completed|matched|available|ok|valid|sent|success|succeeded|true|yes)$/i;
+const BAD =
+  /fail|expired|error|denied|reauthor|revoked|invalid|bounce|disconnected|unavailable|rejected/i;
+const WARN = /unknown|retry|expir|degrad|warn|paused|disabled|stale|unvalidated/i;
+const PENDING = /pending|queue|connecting|prepar|syncing|delivering|running|sending|info/i;
+export function tone(value: unknown): "good" | "bad" | "warn" | "pending" | "" {
+  const s = text(value);
+  return GOOD.test(s)
+    ? "good"
+    : BAD.test(s)
+      ? "bad"
+      : WARN.test(s)
+        ? "warn"
+        : PENDING.test(s)
+          ? "pending"
+          : "";
+}
+export const sentence = (v: unknown) => {
+  const s = text(v).replaceAll("_", " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 export function Badge({ value }: { value: unknown }) {
   const s = text(value);
+  const label = /^[A-Z]+$/.test(s) ? s : sentence(s);
   return (
-    <span
-      className={`badge ${/^(ready|connected|healthy|accepted|delivered|complete|completed|matched|available)$/.test(s) ? "good" : /fail|unknown|expired|error|denied|reauthor/i.test(s) ? "bad" : /pending|queue|connecting|prepar|syncing/.test(s) ? "pending" : ""}`}
-    >
+    <span className={`badge ${tone(s)}`}>
       <i />
-      {s.replaceAll("_", " ")}
+      {label}
     </span>
+  );
+}
+export function Meter({
+  value,
+  max = 100,
+  tone: t,
+  label,
+}: {
+  value: number;
+  max?: number;
+  tone?: "success" | "warning" | "destructive" | "info" | "rust" | "neutral";
+  label?: string;
+}) {
+  const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+  const auto = t || (pct >= 90 ? "destructive" : pct >= 75 ? "warning" : undefined);
+  return (
+    <div className="meter" role="img" aria-label={label || `${Math.round(pct)}%`}>
+      <span className={auto ? `m-${auto}` : ""} style={{ width: `${pct}%` }} />
+    </div>
   );
 }
 export function ErrorBox({ error }: { error: unknown }) {
@@ -235,7 +275,7 @@ export function Pagination({ data }: { data?: Page }) {
   return (
     <div className="pagination">
       <span>
-        {data.total} records · Page {page} of{" "}
+        {data.total.toLocaleString()} records · Page {page} of{" "}
         {Math.max(1, Math.ceil(data.total / (data.per_page || 50)))}
       </span>
       <div>
@@ -315,15 +355,22 @@ export function Table({
 }
 export function Section({
   title,
+  aside,
   children,
+  flush = false,
 }: {
   title: string;
+  aside?: ReactNode;
   children: ReactNode;
+  flush?: boolean;
 }) {
   return (
-    <section className="panel">
-      <h2>{title}</h2>
-      {children}
+    <section className="frame">
+      <div className="frame-head">
+        <h2>{title}</h2>
+        {aside && <div className="aside">{aside}</div>}
+      </div>
+      <div className={flush ? "panel flush" : "panel"}>{children}</div>
     </section>
   );
 }

@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import {
   Activity,
   ArrowUpRight,
+  ChevronRight,
   Database,
+  KeyRound,
   Mail,
   Send,
   Webhook,
   HardDrive,
   AlertTriangle,
-  Terminal,
+  Pause,
+  Play,
   CheckCircle2,
 } from "lucide-react";
 import { useApi } from "../api";
@@ -24,20 +27,37 @@ import {
   Inspect,
   Json,
   LoadState,
+  Meter,
   Pagination,
   Section,
+  tone,
   Table,
   useFilters,
 } from "../components/shared";
-import { Button } from "../components/ui/button";
+function uptime(sec: number) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function age(sec: number | null | undefined) {
+  if (sec === null || sec === undefined) return null;
+  return sec < 120 ? `${sec}s` : sec < 7200 ? `${Math.round(sec / 60)}m` : `${Math.round(sec / 3600)}h`;
+}
 export function Overview() {
   const q = useApi("/overview");
   const r = q.data;
-  const counts = r?.mailboxes_by_state || {};
+  const counts: Record<string, number> = r?.mailboxes_by_state || {};
+  const total = Object.values(counts).reduce((a, v) => a + Number(v), 0);
+  const healthy = Object.entries(counts)
+    .filter(([k]) => tone(k) === "good")
+    .reduce((a, [, v]) => a + Number(v), 0);
+  const segs = Object.entries(counts)
+    .filter(([, v]) => Number(v) > 0)
+    .sort(([a], [b]) => order(a) - order(b));
   return (
     <>
       <Heading
-        eyebrow="OPERATIONS"
         title="Overview"
         description="A current view of your mail infrastructure."
       >
@@ -49,168 +69,218 @@ export function Overview() {
       <LoadState loading={q.isPending} error={q.error}>
         {r && (
           <>
-            <div className="health-strip">
-              <div className="health-title">
-                <CheckCircle2 size={20} />
-                <strong>
-                  {r.ready ? "Rustbox is ready" : "Rustbox needs attention"}
-                </strong>
+            {!r.ready && (
+              <div className="error" role="alert">
+                <AlertTriangle size={16} />
+                Rustbox is not ready. Database {r.database}.
               </div>
-              <span>
-                <Database size={14} />
-                Database {r.database}
-              </span>
-              <span>v{r.version}</span>
-              <span>
-                Uptime {Math.floor(r.uptime_seconds / 3600)}h{" "}
-                {Math.floor((r.uptime_seconds % 3600) / 60)}m
-              </span>
-              <small>Observed {time(r.observed_at)}</small>
-            </div>
+            )}
             <div className="metric-grid overview-metrics">
-              {[
-                {
-                  label: "Mailboxes",
-                  value: Object.values(counts).reduce(
-                    (a: number, v) => a + Number(v),
-                    0,
-                  ),
-                  icon: Mail,
-                  to: "/mailboxes",
-                  hint: Object.entries(counts)
-                    .map(([k, v]) => `${v} ${k}`)
-                    .join(" · "),
-                },
-                {
-                  label: "Queued sends",
-                  value: r.sends_queued,
-                  icon: Send,
-                  to: "/outgoing?status=queued",
-                  hint: `${r.sends_unknown} uncertain outcomes`,
-                },
-                {
-                  label: "Webhook backlog",
-                  value: r.webhook_backlog,
-                  icon: Webhook,
-                  to: "/events?tab=deliveries",
-                  hint: "Pending and delivering",
-                },
-                {
-                  label: "Content cache",
-                  value: bytes(r.cache_bytes),
-                  icon: HardDrive,
-                  to: "/system",
-                  hint: `of ${bytes(r.cache_capacity_bytes)} · ${r.content_pending} pending`,
-                },
-              ].map((m) => (
-                <Link className="metric" to={m.to} key={m.label}>
-                  <div className="metric-top">
-                    <label>{m.label}</label>
-                    <m.icon size={17} />
-                  </div>
-                  <strong>{m.value}</strong>
-                  <small>{m.hint}</small>
-                </Link>
-              ))}
-            </div>
-            <div className="two-column">
-              <Section title="Needs attention">
-                <LoadState
-                  loading={false}
-                  error={null}
-                  empty={!r.attention?.length}
-                >
-                  {r.attention?.map((a: Row) => (
-                    <Link
-                      className="attention-row"
-                      key={a.kind + a.id}
-                      to={
-                        a.kind === "mailbox"
-                          ? "/mailboxes/" + enc(a.id)
-                          : a.kind === "credential"
-                            ? "/credentials?q=" + enc(a.id)
-                            : "/outgoing/" + enc(a.id)
-                      }
-                    >
-                      <AlertTriangle size={17} />
-                      <div>
-                        <strong>{a.name || a.id}</strong>
-                        <small>{a.error || a.state}</small>
-                      </div>
-                      <ArrowUpRight size={16} />
-                    </Link>
+              <Link className="metric" to="/mailboxes">
+                <div className="metric-top">
+                  <label>Healthy mailboxes</label>
+                  <Mail size={16} />
+                </div>
+                <strong>
+                  {healthy} <small className="muted">of {total}</small>
+                </strong>
+                <div className="meter" role="img" aria-label={segs.map(([k, v]) => `${v} ${k}`).join(", ")}>
+                  {segs.map(([k, v]) => (
+                    <span
+                      key={k}
+                      className={meterTone(k)}
+                      style={{ width: `${(Number(v) / Math.max(1, total)) * 100}%` }}
+                    />
                   ))}
-                </LoadState>
+                </div>
+                <small>
+                  {segs.map(([k, v]) => `${v} ${k.replaceAll("_", " ")}`).join(" · ") || "No mailboxes yet"}
+                </small>
+              </Link>
+              <Link className="metric" to="/outgoing?status=queued">
+                <div className="metric-top">
+                  <label>Queued sends</label>
+                  <Send size={16} />
+                </div>
+                <strong>{Number(r.sends_queued).toLocaleString()}</strong>
+                <small>
+                  {r.sends_unknown > 0 ? (
+                    <span className="badge warn">
+                      <i />
+                      {r.sends_unknown} unknown
+                    </span>
+                  ) : (
+                    "No uncertain outcomes"
+                  )}
+                </small>
+              </Link>
+              <Link className="metric" to="/events?tab=deliveries">
+                <div className="metric-top">
+                  <label>Webhook backlog</label>
+                  <Webhook size={16} />
+                </div>
+                <strong>{Number(r.webhook_backlog).toLocaleString()}</strong>
+                <small>Pending and delivering</small>
+              </Link>
+              <Link className="metric" to="/system">
+                <div className="metric-top">
+                  <label>Content cache</label>
+                  <HardDrive size={16} />
+                </div>
+                <strong>{bytes(r.cache_bytes)}</strong>
+                <Meter value={r.cache_bytes} max={r.cache_capacity_bytes} />
+                <small>
+                  of {bytes(r.cache_capacity_bytes)} · {r.content_pending} pending
+                </small>
+              </Link>
+            </div>
+            <div className="cols">
+              <Section
+                title="Needs attention"
+                flush
+                aside={
+                  r.attention?.length ? (
+                    <span className="badge bad">
+                      <i />
+                      {r.attention.length}
+                    </span>
+                  ) : undefined
+                }
+              >
+                {r.attention?.length ? (
+                  r.attention.map((a: Row) => {
+                    const t = tone(a.state || a.error) || "warn";
+                    const Icon =
+                      a.kind === "mailbox" ? Mail : a.kind === "credential" ? KeyRound : Send;
+                    return (
+                      <Link
+                        className="attention-row"
+                        key={a.kind + a.id}
+                        to={
+                          a.kind === "mailbox"
+                            ? "/mailboxes/" + enc(a.id)
+                            : a.kind === "credential"
+                              ? "/credentials?q=" + enc(a.id)
+                              : "/outgoing/" + enc(a.id)
+                        }
+                      >
+                        <span className={`ico-box ${t === "bad" ? "bad" : "warn"}`}>
+                          <Icon size={16} />
+                        </span>
+                        <div>
+                          <strong>{a.name || a.id}</strong>
+                          <small className={a.error ? "mono" : ""}>{a.error || a.kind}</small>
+                        </div>
+                        {a.state && <Badge value={a.state} />}
+                        <ChevronRight size={16} />
+                      </Link>
+                    );
+                  })
+                ) : (
+                  <div className="empty">
+                    <CheckCircle2 size={28} />
+                    <strong>All clear</strong>
+                    <span>No mailboxes, credentials or sends need action.</span>
+                  </div>
+                )}
               </Section>
-              <Section title="Synchronization freshness">
+              <Section title="Runtime and freshness" flush>
                 <div className="freshness">
-                  <Activity size={19} />
+                  <span className={`ico-box ${r.ready ? "good" : "bad"}`}>
+                    <Database size={16} />
+                  </span>
+                  <div>
+                    <strong>Database {r.database}</strong>
+                    <p>
+                      v{r.version} · up {uptime(r.uptime_seconds)}
+                    </p>
+                  </div>
+                </div>
+                <div className="freshness">
+                  <span className="ico-box">
+                    <Activity size={16} />
+                  </span>
                   <div>
                     <strong>Native providers</strong>
                     <p>
-                      {r.native_sync_age_seconds === null
-                        ? "No successful sync recorded"
-                        : `${r.native_sync_age_seconds}s maximum sync age`}
+                      {age(r.native_sync_age_seconds)
+                        ? `Oldest sync ${age(r.native_sync_age_seconds)} ago`
+                        : "No successful sync recorded"}
                     </p>
                   </div>
                 </div>
                 <div className="freshness">
-                  <Mail size={19} />
+                  <span className="ico-box">
+                    <Mail size={16} />
+                  </span>
                   <div>
                     <strong>IMAP checkpoints</strong>
                     <p>
-                      {r.imap_checkpoint_age_seconds === null
-                        ? "No checkpoints recorded"
-                        : `${r.imap_checkpoint_age_seconds}s maximum checkpoint age`}
+                      {age(r.imap_checkpoint_age_seconds)
+                        ? `Oldest checkpoint ${age(r.imap_checkpoint_age_seconds)} ago`
+                        : "No checkpoints recorded"}
                     </p>
                   </div>
                 </div>
-                <p className="muted">
-                  Connection state and synchronization freshness describe
-                  different health signals.
-                </p>
-                <div className="provider-counts">
-                  {Object.entries(r.mailboxes_by_provider || {}).map(
-                    ([k, v]) => (
-                      <span key={k}>
-                        <b>{text(v)}</b> {k}
-                      </span>
-                    ),
-                  )}
+                <div className="freshness">
+                  <div>
+                    <div className="provider-counts">
+                      {Object.entries(r.mailboxes_by_provider || {}).map(([k, v]) => (
+                        <span key={k}>
+                          <b>{text(v)}</b> {k}
+                        </span>
+                      ))}
+                    </div>
+                    <p>Observed {time(r.observed_at)}</p>
+                  </div>
                 </div>
               </Section>
             </div>
-            <Section title="Recent events">
-              <Table headers={["Event", "Type", "Mailbox", "Observed", ""]}>
-                {r.recent_events?.map((e: Row) => (
-                  <tr key={e.id}>
-                    <td className="mono">#{e.id}</td>
-                    <td>{e.type}</td>
-                    <td>
-                      <Link to={"/mailboxes/" + enc(e.account_id)}>
-                        {e.account_name || e.account_id.slice(0, 12)}
-                      </Link>
-                    </td>
-                    <td>{time(e.observed_at)}</td>
-                    <td>
-                      <Inspect title={"Event #" + e.id} value={e} />
-                    </td>
-                  </tr>
-                ))}
-              </Table>
-              {!r.recent_events?.length && (
-                <p className="muted padded">No business events yet.</p>
-              )}
-              <Link className="panel-link" to="/events">
-                View all events <ArrowUpRight size={14} />
-              </Link>
-            </Section>
+            <section className="frame">
+              <div className="frame-head">
+                <h2>Recent events</h2>
+                <Link className="btn btn-ghost btn-sm" to="/events">
+                  View all <ArrowUpRight size={14} />
+                </Link>
+              </div>
+              <div className="panel flush">
+                {r.recent_events?.length ? (
+                  <Table headers={["Event", "Type", "Mailbox", "Observed", ""]}>
+                    {r.recent_events.map((e: Row) => (
+                      <tr key={e.id}>
+                        <td className="mono muted">#{e.id}</td>
+                        <td>
+                          <span className="event-type">{e.type}</span>
+                        </td>
+                        <td>
+                          <Link to={"/mailboxes/" + enc(e.account_id)}>
+                            {e.account_name || e.account_id.slice(0, 12)}
+                          </Link>
+                        </td>
+                        <td className="muted nowrap">{time(e.observed_at)}</td>
+                        <td>
+                          <Inspect title={"Event #" + e.id} value={e} />
+                        </td>
+                      </tr>
+                    ))}
+                  </Table>
+                ) : (
+                  <p className="muted padded">No business events yet.</p>
+                )}
+              </div>
+            </section>
           </>
         )}
       </LoadState>
     </>
   );
 }
+const STATE_ORDER = ["good", "pending", "warn", "", "bad"];
+const order = (k: string) => STATE_ORDER.indexOf(tone(k));
+const meterTone = (k: string) =>
+  ({ good: "m-success", pending: "m-info", warn: "m-warning", bad: "m-destructive", "": "m-neutral" })[
+    tone(k)
+  ];
 export function Logs() {
   const { params, set, query } = useFilters();
   const [live, setLive] = useState(true);
@@ -225,26 +295,57 @@ export function Logs() {
         title="Operational logs"
         description="Sanitized service activity, retained across restarts."
       >
-        <Button
-          variant={live ? "default" : "outline"}
-          onClick={() => {
-            setLive(!live);
-            set("page", "1");
-          }}
-        >
-          <Terminal size={15} />
-          {live ? "Live tail on" : "Live tail paused"}
-        </Button>
+        <span className="switch-label">
+          <button
+            className={live ? "switch on" : "switch"}
+            role="switch"
+            aria-checked={live}
+            aria-labelledby="follow-label"
+            onClick={() => {
+              setLive(!live);
+              set("page", "1");
+            }}
+          />
+          <span id="follow-label">Follow new records</span>
+        </span>
       </Heading>
-      <div className="notice mb">
-        {q.data?.retention_days || 7}-day retention ·{" "}
-        {bytes(q.data?.capacity_bytes || 1073741824)} record payload limit ·{" "}
-        {q.data?.dropped_records || 0} dropped records
-        {q.data?.oldest_available_at
-          ? " · Oldest available " + time(q.data.oldest_available_at)
-          : ""}
-        . Records older than these limits are unavailable.
-      </div>
+      <section className="frame" aria-label="Retention">
+        <div className="metric-grid g4" style={{ border: 0, padding: 0 }}>
+          <div className="metric">
+            <label>
+              {live ? <Play size={14} className="ic-success" /> : <Pause size={14} />}
+              Live tail
+            </label>
+            <strong style={{ fontSize: 18, lineHeight: "24px" }}>
+              {live ? "Every 2s" : "Paused"}
+            </strong>
+          </div>
+          <div className="metric">
+            <label>Retention</label>
+            <strong style={{ fontSize: 18, lineHeight: "24px" }}>
+              {q.data?.retention_days || 7} days
+            </strong>
+          </div>
+          <div className="metric">
+            <label>Payload limit</label>
+            <strong style={{ fontSize: 18, lineHeight: "24px" }}>
+              {bytes(q.data?.capacity_bytes || 1073741824)}
+            </strong>
+          </div>
+          <div className="metric">
+            <label>Dropped records</label>
+            <strong style={{ fontSize: 18, lineHeight: "24px" }}>
+              {q.data?.dropped_records || 0}
+            </strong>
+          </div>
+        </div>
+        <div className="frame-foot">
+          {q.data?.oldest_available_at
+            ? "Oldest available " + time(q.data.oldest_available_at) + ". "
+            : ""}
+          Records older than these limits are unavailable.
+        </div>
+      </section>
       {q.isError && (
         <div className="error" role="alert">
           Log updates interrupted. The service will retry automatically while
@@ -356,7 +457,7 @@ export function System() {
               </div>
               <div className="metric">
                 <label>Uptime</label>
-                <strong>{Math.floor(r.uptime_seconds / 60)} minutes</strong>
+                <strong>{uptime(r.uptime_seconds)}</strong>
               </div>
               <div className="metric">
                 <label>Dropped logs</label>
@@ -384,11 +485,13 @@ export function System() {
                   Configured application names. Every API key has administrative
                   access.
                 </p>
-                {r.applications?.map((a: string) => (
-                  <span className="badge" key={a}>
-                    {a}
-                  </span>
-                ))}
+                <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+                  {r.applications?.map((a: string) => (
+                    <span className="badge outline mono" key={a}>
+                      {a}
+                    </span>
+                  ))}
+                </div>
               </Section>
             </div>
             <Section title="Provider registrations">

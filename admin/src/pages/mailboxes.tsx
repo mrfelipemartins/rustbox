@@ -104,12 +104,19 @@ export function Mailboxes() {
             {q.data?.items.map((r) => (
               <tr key={r.id}>
                 <td>
-                  <Link className="record-name" to={`/mailboxes/${enc(r.id)}`}>
-                    {r.name}
-                  </Link>
-                  <small>{mailboxAddress(r)}</small>
+                  <div className="cell2">
+                    <span className="av md">{(r.name || mailboxAddress(r)).slice(0, 1)}</span>
+                    <div>
+                      <Link className="record-name" to={`/mailboxes/${enc(r.id)}`}>
+                        {r.name}
+                      </Link>
+                      <small>{mailboxAddress(r)}</small>
+                    </div>
+                  </div>
                 </td>
-                <td className="capitalize">{r.backend}</td>
+                <td>
+                  <span className="badge outline capitalize">{r.backend}</span>
+                </td>
                 <td>
                   <Badge value={r.state} />
                 </td>
