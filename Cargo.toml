@@ -8,7 +8,7 @@ description = "Self-hosted IMAP/SMTP service with an HTTP API and signed webhook
 readme = "README.md"
 
 [dependencies]
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 anyhow = "1"
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
 axum = { version = "0.8", features = ["macros"] }
